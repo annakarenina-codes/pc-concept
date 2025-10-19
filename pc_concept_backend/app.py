@@ -1,13 +1,12 @@
 from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
+from extensions import db, migrate
 from config import Config
-
-db = SQLAlchemy()
 
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
     db.init_app(app)
+    migrate.init_app(app, db)
 
     from routes.products import products_bp
     from routes.specifications import specs_bp
