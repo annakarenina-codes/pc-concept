@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { getAllBlogs, type Blog } from '../api/services/blogService';
+import BlogModal from '../components/BlogModal';
 import Loading from '../components/common/Loading';
-
 
 const BlogPage: React.FC = () => {
   const [blogs, setBlogs] = useState<Blog[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedBlog, setSelectedBlog] = useState<Blog | null>(null);
 
   useEffect(() => {
     const fetchBlogs = async () => {
@@ -42,7 +43,8 @@ const BlogPage: React.FC = () => {
             blogs.map((blog) => (
               <div
                 key={blog.blog_id}
-                className="bg-white rounded-lg overflow-hidden hover:shadow-2xl transition-shadow duration-300 border border-gray-200"
+                className="bg-white rounded-lg overflow-hidden hover:shadow-2xl transition-shadow duration-300 border border-gray-200 cursor-pointer"
+                onClick={() => setSelectedBlog(blog)}
               >
                 {/* Blog Image */}
                 <div className="relative overflow-hidden h-64">
@@ -72,7 +74,10 @@ const BlogPage: React.FC = () => {
                   <div className="flex items-center justify-between">
                     {/* Read More Button */}
                     <button
-                      onClick={() => window.location.href = `/blog/${blog.blog_id}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedBlog(blog);
+                      }}
                       className="bg-red-700 text-white text-sm font-semibold px-6 py-2 rounded-lg hover:bg-black transition-colors duration-300"
                     >
                       Read More
@@ -97,6 +102,13 @@ const BlogPage: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Blog Modal */}
+      <BlogModal
+        open={!!selectedBlog}
+        blog={selectedBlog}
+        onClose={() => setSelectedBlog(null)}
+      />
     </div>
   );
 };
