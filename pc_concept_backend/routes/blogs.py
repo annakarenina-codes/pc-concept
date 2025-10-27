@@ -5,7 +5,6 @@ from extensions import db
 
 blogs_bp = Blueprint('blogs', __name__)
 
-
 def validate_positive_int(value, default):
     """Validate and return positive integer or default"""
     try:
@@ -13,7 +12,6 @@ def validate_positive_int(value, default):
         return v if v > 0 else default
     except:
         return default
-
 
 def validate_date(date_string):
     """Validate date string in YYYY-MM-DD format"""
@@ -26,51 +24,39 @@ def validate_date(date_string):
     except ValueError:
         return False, "Invalid date format. Use YYYY-MM-DD"
 
-
-def serialize_blog(blog, include_full_content=True, excerpt_length=200):
+def serialize_blog(blog, include_full_content=True):
     """Serialize blog to dictionary"""
     result = {
         "blog_id": blog.blog_id,
         "title": blog.title,
         "author": blog.author,
-        "date_published": blog.date_published.strftime("%Y-%m-%d")
+        "date_published": blog.date_published.strftime("%Y-%m-%d"),
+        "image_url": blog.image_url,
+        "introduction": blog.introduction
     }
     
     if include_full_content:
-        result["content"] = blog.content
-    else:
-        # Return excerpt/preview
-        content = blog.content or ""
-        if len(content) > excerpt_length:
-            result["excerpt"] = content[:excerpt_length].strip() + "..."
-        else:
-            result["excerpt"] = content
+        result["body"] = blog.body
+        result["conclusion"] = blog.conclusion
     
-    # Include sources if available
-    if blog.sources:
-        result["sources"] = blog.sources
-    
+    # ❌ REMOVED: sources references
     return result
 
-
-# GET all blogs (with pagination and preview mode)
 @blogs_bp.route('/', methods=['GET'])
 def get_blogs():
-    """Get all blogs with pagination and optional preview mode"""
+    """Get all blogs with pagination"""
     page = validate_positive_int(request.args.get('page', 1), 1)
     per_page = validate_positive_int(request.args.get('per_page', 10), 10)
-    per_page = min(per_page, 50)  # Max 50 blogs per page
+    per_page = min(per_page, 50)
     
-    # Option to get full content or just excerpts
-    preview_mode = request.args.get('preview', 'true').lower() == 'true'
+    full_content = request.args.get('full_content', 'false').lower() == 'true'
     
-    # Sort by newest first
     query = Blog.query.order_by(Blog.date_published.desc())
     paginated = query.paginate(page=page, per_page=per_page, error_out=False)
     
     output = []
     for b in paginated.items:
-        output.append(serialize_blog(b, include_full_content=not preview_mode))
+        output.append(serialize_blog(b, include_full_content=full_content))
     
     return jsonify({
         "blogs": output,
@@ -80,13 +66,11 @@ def get_blogs():
         "pages": paginated.pages
     }), 200
 
-
-# GET latest/recent blogs
 @blogs_bp.route('/latest', methods=['GET'])
 def get_latest_blogs():
     """Get the most recent blogs (default 5)"""
     limit = validate_positive_int(request.args.get('limit', 5), 5)
-    limit = min(limit, 20)  # Max 20 blogs
+    limit = min(limit, 20)
     
     blogs = Blog.query.order_by(Blog.date_published.desc()).limit(limit).all()
     
@@ -96,8 +80,6 @@ def get_latest_blogs():
     
     return jsonify(output), 200
 
-
-# GET blog by ID
 @blogs_bp.route('/<int:blog_id>', methods=['GET'])
 def get_blog_by_id(blog_id):
     """Get a single blog by ID with full content"""
@@ -108,8 +90,6 @@ def get_blog_by_id(blog_id):
     result = serialize_blog(blog, include_full_content=True)
     return jsonify(result), 200
 
-
-# SEARCH blogs by title or content
 @blogs_bp.route('/search', methods=['GET'])
 def search_blogs():
     """Search blogs by title or content keywords"""
@@ -125,11 +105,12 @@ def search_blogs():
     per_page = validate_positive_int(request.args.get('per_page', 10), 10)
     per_page = min(per_page, 50)
     
-    # Search in both title and content
     query = Blog.query.filter(
         db.or_(
             Blog.title.ilike(f'%{search_term}%'),
-            Blog.content.ilike(f'%{search_term}%')
+            Blog.introduction.ilike(f'%{search_term}%'),
+            Blog.body.ilike(f'%{search_term}%'),
+            Blog.conclusion.ilike(f'%{search_term}%')
         )
     ).order_by(Blog.date_published.desc())
     
@@ -148,8 +129,6 @@ def search_blogs():
         "search_term": search_term
     }), 200
 
-
-# GET blogs by author
 @blogs_bp.route('/author/<string:author>', methods=['GET'])
 def get_blogs_by_author(author):
     """Get all blogs by a specific author"""
@@ -173,8 +152,6 @@ def get_blogs_by_author(author):
         "author": author
     }), 200
 
-
-# ADD new blog
 @blogs_bp.route('/', methods=['POST'])
 def add_blog():
     """Create a new blog post"""
@@ -183,52 +160,60 @@ def add_blog():
     if not data:
         return jsonify({'error': 'No data provided'}), 400
     
-    # Validate required fields
-    required_fields = ['title', 'content', 'author']
+    required_fields = ['title', 'introduction', 'body', 'conclusion', 'author', 'image_url']
     for field in required_fields:
         if field not in data or not data[field]:
             return jsonify({'error': f'Missing required field: {field}'}), 400
     
-    # Validate that fields are not empty strings
     title = str(data['title']).strip()
-    content = str(data['content']).strip()
+    introduction = str(data['introduction']).strip()
+    body = str(data['body']).strip()
+    conclusion = str(data['conclusion']).strip()
     author = str(data['author']).strip()
+    image_url = str(data['image_url']).strip()
     
     if len(title) == 0:
         return jsonify({'error': 'Title cannot be empty'}), 400
-    if len(content) == 0:
-        return jsonify({'error': 'Content cannot be empty'}), 400
+    if len(introduction) == 0:
+        return jsonify({'error': 'Introduction cannot be empty'}), 400
+    if len(body) == 0:
+        return jsonify({'error': 'Body cannot be empty'}), 400
+    if len(conclusion) == 0:
+        return jsonify({'error': 'Conclusion cannot be empty'}), 400
     if len(author) == 0:
         return jsonify({'error': 'Author cannot be empty'}), 400
+    if len(image_url) == 0:
+        return jsonify({'error': 'Image URL cannot be empty'}), 400
     
-    # Validate title length
     if len(title) > 200:
         return jsonify({'error': 'Title must not exceed 200 characters'}), 400
     
-    # Validate author length
     if len(author) > 100:
         return jsonify({'error': 'Author name must not exceed 100 characters'}), 400
     
-    # Handle date_published - auto-generate if not provided
+    if not image_url.startswith('http'):
+        return jsonify({'error': 'Image URL must be a valid URL (http/https)'}), 400
+    
     if 'date_published' in data and data['date_published']:
         is_valid, date_result = validate_date(data['date_published'])
         if not is_valid:
             return jsonify({'error': date_result}), 400
         date_published = date_result
     else:
-        # Auto-generate current date if not provided
         date_published = datetime.utcnow().date()
     
-    # Handle sources (optional)
-    sources = data.get('sources', '').strip() if data.get('sources') else None
+    # ❌ REMOVED: sources handling
     
     try:
         new_blog = Blog(
             title=title,
-            content=content,
+            introduction=introduction,
+            body=body,
+            conclusion=conclusion,
             author=author,
-            sources=sources,
+            image_url=image_url,
             date_published=date_published
+            # ❌ REMOVED: sources=sources
         )
         
         db.session.add(new_blog)
@@ -243,8 +228,6 @@ def add_blog():
         db.session.rollback()
         return jsonify({'error': f'Database error: {str(e)}'}), 500
 
-
-# UPDATE blog (PUT)
 @blogs_bp.route('/<int:blog_id>', methods=['PUT'])
 def update_blog(blog_id):
     """Update an existing blog post"""
@@ -258,7 +241,6 @@ def update_blog(blog_id):
     if not data:
         return jsonify({'error': 'No data provided'}), 400
     
-    # Validate title if provided
     if 'title' in data:
         title = str(data['title']).strip()
         if len(title) == 0:
@@ -266,13 +248,21 @@ def update_blog(blog_id):
         if len(title) > 200:
             return jsonify({'error': 'Title must not exceed 200 characters'}), 400
     
-    # Validate content if provided
-    if 'content' in data:
-        content = str(data['content']).strip()
-        if len(content) == 0:
-            return jsonify({'error': 'Content cannot be empty'}), 400
+    if 'introduction' in data:
+        introduction = str(data['introduction']).strip()
+        if len(introduction) == 0:
+            return jsonify({'error': 'Introduction cannot be empty'}), 400
     
-    # Validate author if provided
+    if 'body' in data:
+        body = str(data['body']).strip()
+        if len(body) == 0:
+            return jsonify({'error': 'Body cannot be empty'}), 400
+    
+    if 'conclusion' in data:
+        conclusion = str(data['conclusion']).strip()
+        if len(conclusion) == 0:
+            return jsonify({'error': 'Conclusion cannot be empty'}), 400
+    
     if 'author' in data:
         author = str(data['author']).strip()
         if len(author) == 0:
@@ -280,7 +270,13 @@ def update_blog(blog_id):
         if len(author) > 100:
             return jsonify({'error': 'Author name must not exceed 100 characters'}), 400
     
-    # Validate date if provided
+    if 'image_url' in data:
+        image_url = str(data['image_url']).strip()
+        if len(image_url) == 0:
+            return jsonify({'error': 'Image URL cannot be empty'}), 400
+        if not image_url.startswith('http'):
+            return jsonify({'error': 'Image URL must be a valid URL'}), 400
+    
     if 'date_published' in data and data['date_published']:
         is_valid, date_result = validate_date(data['date_published'])
         if not is_valid:
@@ -288,9 +284,12 @@ def update_blog(blog_id):
     
     try:
         blog.title = data.get('title', blog.title).strip() if 'title' in data else blog.title
-        blog.content = data.get('content', blog.content).strip() if 'content' in data else blog.content
+        blog.introduction = data.get('introduction', blog.introduction).strip() if 'introduction' in data else blog.introduction
+        blog.body = data.get('body', blog.body).strip() if 'body' in data else blog.body
+        blog.conclusion = data.get('conclusion', blog.conclusion).strip() if 'conclusion' in data else blog.conclusion
         blog.author = data.get('author', blog.author).strip() if 'author' in data else blog.author
-        blog.sources = data.get('sources', blog.sources).strip() if 'sources' in data and data['sources'] else blog.sources
+        blog.image_url = data.get('image_url', blog.image_url).strip() if 'image_url' in data else blog.image_url
+        # ❌ REMOVED: blog.sources line
         
         if 'date_published' in data and data['date_published']:
             is_valid, date_result = validate_date(data['date_published'])
@@ -304,8 +303,6 @@ def update_blog(blog_id):
         db.session.rollback()
         return jsonify({'error': f'Database error: {str(e)}'}), 500
 
-
-# DELETE blog
 @blogs_bp.route('/<int:blog_id>', methods=['DELETE'])
 def delete_blog(blog_id):
     """Delete a blog post"""

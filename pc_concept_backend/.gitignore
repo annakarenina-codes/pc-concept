@@ -1,0 +1,109 @@
+# Environment variables (CRITICAL - contains secrets!)
+.env
+.env.local
+.env.*.local
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environment
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.venv/
+
+# Flask
+instance/
+.webassets-cache
+
+# Database files (if using SQLite for testing)
+*.db
+*.sqlite
+*.sqlite3
+
+# Migrations (optional - some people commit these, some don't)
+# migrations/
+
+# IDE - Visual Studio Code
+.vscode/
+*.code-workspace
+
+# IDE - PyCharm
+.idea/
+*.iml
+*.iws
+.idea_modules/
+
+# IDE - Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# OS - macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# OS - Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# OS - Linux
+*~
+.nfs*
+
+# Logs
+*.log
+logs/
+
+# Test coverage
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pyenv
+.python-version
+
+# Backup files
+*.bak
+*.swp
+*.swo
+*~
+
+# Temporary files
+tmp/
+temp/

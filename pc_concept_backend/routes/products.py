@@ -23,7 +23,6 @@ def validate_positive_int(value, default):
     except:
         return default
 
-
 def validate_positive_number(value, field_name="value"):
     """Validate that a number is positive"""
     try:
@@ -34,9 +33,24 @@ def validate_positive_number(value, field_name="value"):
     except (ValueError, TypeError):
         return False, f"{field_name} must be a valid number"
 
-
-def serialize_product(product, include_specs=False):
-    """Serialize product to dictionary"""
+def serialize_product(product, include_specs=False, card_mode=False):
+    """Serialize product to dictionary
+    
+    Args:
+        product: Product model instance
+        include_specs: Include product specifications (DEPRECATED - always include when card_mode=False)
+        card_mode: Return minimal data for product cards (default: False)
+    """
+    if card_mode:
+        # ✅ Minimal data for product cards: id, name, price, image_url only
+        return {
+            "product_id": product.product_id,
+            "name": product.name,
+            "price": float(product.price),
+            "image_url": product.image_url
+        }
+    
+    # ✅ FIXED: Full product data - ALWAYS include specifications when card_mode=False
     result = {
         "product_id": product.product_id,
         "name": product.name,
@@ -44,18 +58,15 @@ def serialize_product(product, include_specs=False):
         "category": product.category,
         "subcategory": product.subcategory,
         "price": float(product.price),
-        "description": product.description,
-        "image_url": product.image_url
-    }
-    
-    if include_specs:
-        result["specifications"] = [
+        "image_url": product.image_url,
+        # ✅ ALWAYS include specifications for full product data
+        "specifications": [
             {"spec_name": s.spec_name, "spec_value": s.spec_value}
             for s in product.specifications
-        ]
+        ] if product.specifications else []
+    }
     
     return result
-
 
 # GET all products (with pagination)
 @products_bp.route('/', methods=['GET'])
@@ -65,11 +76,13 @@ def get_products():
     per_page = validate_positive_int(request.args.get('per_page', 24), 24)
     per_page = min(per_page, 100)  # Max 100 items per page
     
-    include_specs = request.args.get('include_specs', 'false').lower() == 'true'
+    # ✅ REMOVED include_specs parameter - always included when card_mode=False
+    card_mode = request.args.get('card_mode', 'false').lower() == 'true'
     
     paginated = Product.query.paginate(page=page, per_page=per_page, error_out=False)
     
-    products = [serialize_product(p, include_specs) for p in paginated.items]
+    # ✅ FIXED: Simplified - specifications automatically included based on card_mode
+    products = [serialize_product(p, card_mode=card_mode) for p in paginated.items]
     
     return jsonify({
         "products": products,
@@ -78,7 +91,6 @@ def get_products():
         "total": paginated.total,
         "pages": paginated.pages
     }), 200
-
 
 # GET product by ID
 @products_bp.route('/<string:product_id>', methods=['GET'])
@@ -89,11 +101,10 @@ def get_product(product_id):
     if not product:
         return jsonify({'error': 'Product not found'}), 404
     
-    # Always include specifications for single product view
-    result = serialize_product(product, include_specs=True)
+    # ✅ Always return full data with specifications for single product view
+    result = serialize_product(product, card_mode=False)
     
     return jsonify(result), 200
-
 
 # ADD new product (CREATE)
 @products_bp.route('/', methods=['POST'])
@@ -105,7 +116,7 @@ def add_product():
         return jsonify({'error': 'No data provided'}), 400
     
     # Validate required fields
-    required_fields = ['product_id', 'name', 'category', 'price', 'description', 'image_url']
+    required_fields = ['product_id', 'name', 'category', 'price', 'image_url']
     for field in required_fields:
         if field not in data or not data[field]:
             return jsonify({'error': f'Missing required field: {field}'}), 400
@@ -162,7 +173,6 @@ def add_product():
             category=category,
             subcategory=subcategory,
             price=price_result,
-            description=data['description'].strip(),
             image_url=data['image_url'].strip()
         )
         
@@ -180,7 +190,6 @@ def add_product():
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': f'Database error: {str(e)}'}), 500
-
 
 # UPDATE product (PUT)
 @products_bp.route('/<string:product_id>', methods=['PUT'])
@@ -239,7 +248,6 @@ def update_product(product_id):
         product.category = category
         product.subcategory = subcategory
         product.price = data.get('price', product.price)
-        product.description = data.get('description', product.description).strip() if 'description' in data else product.description
         product.image_url = data.get('image_url', product.image_url).strip() if 'image_url' in data else product.image_url
         
         db.session.commit()
@@ -248,7 +256,6 @@ def update_product(product_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': f'Database error: {str(e)}'}), 500
-
 
 # DELETE product
 @products_bp.route('/<string:product_id>', methods=['DELETE'])
@@ -278,7 +285,6 @@ def delete_product(product_id):
         db.session.rollback()
         return jsonify({'error': f'Database error: {str(e)}'}), 500
 
-
 # ========== CATEGORY-BASED ENDPOINTS ==========
 
 # GET products by category
@@ -293,12 +299,12 @@ def get_products_by_category(category):
     per_page = validate_positive_int(request.args.get('per_page', 24), 24)
     per_page = min(per_page, 100)
     
-    include_specs = request.args.get('include_specs', 'false').lower() == 'true'
+    card_mode = request.args.get('card_mode', 'false').lower() == 'true'
     
     q = Product.query.filter_by(category=category)
     pagination = q.paginate(page=page, per_page=per_page, error_out=False)
     
-    products = [serialize_product(p, include_specs) for p in pagination.items]
+    products = [serialize_product(p, card_mode=card_mode) for p in pagination.items]
     
     return jsonify({
         "products": products,
@@ -308,7 +314,6 @@ def get_products_by_category(category):
         "pages": pagination.pages,
         "category": category
     }), 200
-
 
 # GET products by category and subcategory
 @products_bp.route('/category/<string:category>/subcategory/<string:subcategory>', methods=['GET'])
@@ -329,12 +334,12 @@ def get_products_by_category_subcategory(category, subcategory):
     per_page = validate_positive_int(request.args.get('per_page', 24), 24)
     per_page = min(per_page, 100)
     
-    include_specs = request.args.get('include_specs', 'false').lower() == 'true'
+    card_mode = request.args.get('card_mode', 'false').lower() == 'true'
     
     q = Product.query.filter_by(category=category, subcategory=subcategory)
     pagination = q.paginate(page=page, per_page=per_page, error_out=False)
     
-    products = [serialize_product(p, include_specs) for p in pagination.items]
+    products = [serialize_product(p, card_mode=card_mode) for p in pagination.items]
     
     return jsonify({
         "products": products,
@@ -345,7 +350,6 @@ def get_products_by_category_subcategory(category, subcategory):
         "category": category,
         "subcategory": subcategory
     }), 200
-
 
 # GET laptops by brand
 @products_bp.route('/category/Laptops/brand/<string:brand>', methods=['GET'])
@@ -359,12 +363,12 @@ def get_laptops_by_brand(brand):
     per_page = validate_positive_int(request.args.get('per_page', 24), 24)
     per_page = min(per_page, 100)
     
-    include_specs = request.args.get('include_specs', 'false').lower() == 'true'
+    card_mode = request.args.get('card_mode', 'false').lower() == 'true'
     
     q = Product.query.filter_by(category='Laptops', brand=brand)
     pagination = q.paginate(page=page, per_page=per_page, error_out=False)
     
-    products = [serialize_product(p, include_specs) for p in pagination.items]
+    products = [serialize_product(p, card_mode=card_mode) for p in pagination.items]
     
     return jsonify({
         "products": products,
@@ -376,7 +380,6 @@ def get_laptops_by_brand(brand):
         "brand": brand
     }), 200
 
-
 # ========== FILTER ENDPOINT ==========
 
 # FILTER products by category, subcategory, or brand
@@ -386,6 +389,8 @@ def filter_products():
     category = request.args.get('category')
     subcategory = request.args.get('subcategory')
     brand = request.args.get('brand')
+    
+    card_mode = request.args.get('card_mode', 'false').lower() == 'true'
     
     query = Product.query
     
@@ -432,18 +437,17 @@ def filter_products():
     if not products:
         return jsonify([]), 200  # Return empty array instead of 404
     
-    # Convert to JSON (with specifications)
-    results = [serialize_product(p, include_specs=True) for p in products]
+    # Convert to JSON
+    results = [serialize_product(p, card_mode=card_mode) for p in products]
     
     return jsonify(results), 200
 
-
 # ========== SEARCH ENDPOINT ==========
 
-# SEARCH products by name
+# ✅ FIXED: SEARCH products by name ONLY (not categories/brands)
 @products_bp.route('/search', methods=['GET'])
 def search_products():
-    """Search products by name"""
+    """Search products by product name only"""
     search_term = request.args.get('q', '').strip()
     
     if not search_term:
@@ -456,11 +460,13 @@ def search_products():
     per_page = validate_positive_int(request.args.get('per_page', 24), 24)
     per_page = min(per_page, 100)
     
-    # Case-insensitive search
+    card_mode = request.args.get('card_mode', 'false').lower() == 'true'
+    
+    # ✅ SEARCH ONLY IN PRODUCT NAME (not brand, category, or subcategory)
     query = Product.query.filter(Product.name.ilike(f'%{search_term}%'))
     pagination = query.paginate(page=page, per_page=per_page, error_out=False)
     
-    products = [serialize_product(p, include_specs=True) for p in pagination.items]
+    products = [serialize_product(p, card_mode=card_mode) for p in pagination.items]
     
     return jsonify({
         "products": products,
