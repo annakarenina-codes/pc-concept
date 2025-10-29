@@ -1,0 +1,16 @@
+/\* /index.html 200
+
+```
+
+This tells Render to serve `index.html` for all routes, letting React Router handle them.
+
+**Step 2: If you don't have a `public` folder**
+
+Create this structure:
+```
+
+pc_concept_frontend/
+public/
+\_redirects
+src/
+...
