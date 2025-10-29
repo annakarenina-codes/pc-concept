@@ -5,6 +5,7 @@ import Footer from "./components/Footer";
 import Loading from "./components/common/Loading";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import BlogDetailsPage from './pages/BlogDetailsPage';
 
 // Lazy load pages
 const HomePage = lazy(() => import("./pages/HomePage"));
@@ -42,7 +43,8 @@ function App() {
               <Route path="/blogs" element={<BlogPage />} />
               <Route path="/reviews" element={<ReviewsPage />} />
               <Route path="/about" element={<AboutPage />} />
-              <Route path="/contact" element={<ContactPage />} /> {/* ADD THIS LINE */}
+              <Route path="/contact" element={<ContactPage />} />
+              <Route path="/blogs/:blogId" element={<BlogDetailsPage />} /> {/* ADD THIS LINE */}
             </Routes>
           </Suspense>
         </main>

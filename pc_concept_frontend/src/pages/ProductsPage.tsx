@@ -102,7 +102,7 @@ const ProductsPage: React.FC = () => {
   if (error) return <div className="text-center py-12 mt-[150px] text-red-600">{error}</div>;
 
   return (
-    <div className="bg-gray-50 py-12 mt-[150px] font-poppins min-h-screen">
+    <div className="bg-gray-50 py-12 mt-[112px] font-poppins min-h-screen">
       <div className="max-w-7xl mx-auto px-4">
         {/* Page Title */}
         <h1 className="text-center text-red-700 text-2xl font-bold mb-12">

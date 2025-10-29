@@ -112,7 +112,7 @@ const ReviewsPage: React.FC = () => {
   if (error) return <div className="text-center py-12 mt-[150px] text-red-600">{error}</div>;
 
   return (
-    <div className="bg-gray-50 py-12 mt-[150px] font-poppins min-h-screen">
+    <div className="bg-gray-50 py-12 mt-[112px] font-poppins min-h-screen">
       <div className="max-w-7xl mx-auto px-4">
         {/* Page Title */}
         <h1 className="text-center text-red-700 text-2xl font-semibold mb-12">
@@ -201,7 +201,7 @@ const ReviewsPage: React.FC = () => {
                         {reviewGroup.map((review) => (
                           <div
                             key={review.review_id}
-                            className="bg-white rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow duration-300 flex-shrink-0 w-[calc(33.333%-16px)] min-w-[300px]"
+                            className= "bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow duration-300 flex-shrink-0 w-[calc(25%-18px)] min-w-[220px]"
                           >
                             {/* Product Name */}
                             <h4 className="font-semibold text-gray-900 mb-2 text-center uppercase text-sm">

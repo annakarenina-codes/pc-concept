@@ -10,7 +10,7 @@ const ContactPage: React.FC = () => {
   };
 
   return (
-    <div className="bg-gray-50 py-16 mt-[150px] font-poppins min-h-screen">
+    <div className="bg-gray-50 py-16 mt-[112px] font-poppins min-h-screen">
       <div className="max-w-4xl mx-auto px-4">
         {/* Page Title */}
         <h1 className="text-center text-red-700 text-3xl font-bold mb-8">

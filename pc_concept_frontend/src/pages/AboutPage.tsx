@@ -10,7 +10,7 @@ const teamMembers = [
 
 const AboutPage: React.FC = () => {
   return (
-    <div className="bg-gray-50 py-12 mt-[150px] font-poppins min-h-screen">
+    <div className="bg-gray-50 py-12 mt-[120px] font-poppins min-h-screen">
       <div className="max-w-7xl mx-auto px-4">
         {/* Who We Are Section */}
         <section className="mb-16 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
