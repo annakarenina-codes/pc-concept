@@ -68,7 +68,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onOpenInfo, onWriteR
 
         {fullProduct?.subcategory && (
           <p className="text-xs text-gray-500 mb-2">
-            <span className="font-medium">Type:</span> {fullProduct.subcategory}
+            <span className="font-medium">Subcategory:</span> {fullProduct.subcategory}
           </p>
         )}
 
