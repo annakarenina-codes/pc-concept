@@ -25,7 +25,8 @@ def create_app():
             "http://localhost:5173", 
             "http://localhost:3000",
             "http://127.0.0.1:5173",  # ✅ ADD THIS
-            "http://127.0.0.1:3000"   # ✅ ADD THIS
+            "http://127.0.0.1:3000",
+            os.getenv('FRONTEND_URL', 'http://localhost:5173')   # ✅ ADD THIS
         ],
             "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
             "allow_headers": ["Content-Type", "Authorization"]
