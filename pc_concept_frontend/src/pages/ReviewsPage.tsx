@@ -149,7 +149,7 @@ const ReviewsPage: React.FC = () => {
                       
                       {/* Slider Controls - Only show if more than 3 reviews */}
                       {reviewGroup.length > 3 && (
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 key={scrollState}">
                           <button
                             onClick={() => {
                               scroll(scrollKey, 'left');
