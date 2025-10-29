@@ -31,6 +31,16 @@ const ReviewsPage: React.FC = () => {
     fetchReviews();
   }, []);
 
+  // ✅ Initialize scroll state after DOM is ready
+  useEffect(() => {
+    // Small delay to ensure DOM is rendered and measured
+    const timer = setTimeout(() => {
+      setScrollState(prev => prev + 1);
+    }, 100);
+    
+    return () => clearTimeout(timer);
+  }, [reviews]); // Re-run when reviews change
+
   // ✅ Group reviews by category, then by brand/subcategory
   const groupedReviews = reviews.reduce((acc, review) => {
     const category = review.category || 'UNCATEGORIZED';
@@ -74,6 +84,13 @@ const ReviewsPage: React.FC = () => {
     }
   };
 
+  // Check if can scroll
+  const [scrollState, setScrollState] = useState(0);
+
+  const updateScrollState = () => {
+    setScrollState(prev => prev + 1);
+  };
+
   // Scroll function for carousel
   const scroll = (key: string, direction: 'left' | 'right') => {
     const container = scrollRefs.current[key];
@@ -88,13 +105,6 @@ const ReviewsPage: React.FC = () => {
       left: newPosition,
       behavior: 'smooth'
     });
-  };
-
-  // Check if can scroll
-  const [scrollState, setScrollState] = useState(0);
-
-  const updateScrollState = () => {
-    setScrollState(prev => prev + 1);
   };
 
   const canScrollLeft = (key: string) => {
@@ -149,15 +159,15 @@ const ReviewsPage: React.FC = () => {
                       
                       {/* Slider Controls - Only show if more than 3 reviews */}
                       {reviewGroup.length > 3 && (
-                        <div className="flex items-center gap-2 key={scrollState}">
+                        <div className="flex items-center gap-2">
                           <button
                             onClick={() => {
                               scroll(scrollKey, 'left');
                               setTimeout(updateScrollState, 100);
                             }}
-                            disabled={!canScrollLeft(scrollKey)}
+                            disabled={scrollState > 0 && !canScrollLeft(scrollKey)}
                             className={`p-2 rounded-full transition-all duration-200 ${
-                              canScrollLeft(scrollKey)
+                              (scrollState === 0 || canScrollLeft(scrollKey))
                                 ? 'bg-red-700 text-white hover:bg-red-800'
                                 : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                             }`}
@@ -170,9 +180,9 @@ const ReviewsPage: React.FC = () => {
                               scroll(scrollKey, 'right');
                               setTimeout(updateScrollState, 100);
                             }}
-                            disabled={!canScrollRight(scrollKey)}
+                            disabled={scrollState > 0 && !canScrollRight(scrollKey)}
                             className={`p-2 rounded-full transition-all duration-200 ${
-                              canScrollRight(scrollKey)
+                              (scrollState === 0 || canScrollRight(scrollKey))
                                 ? 'bg-red-700 text-white hover:bg-red-800'
                                 : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                             }`}
@@ -201,7 +211,7 @@ const ReviewsPage: React.FC = () => {
                         {reviewGroup.map((review) => (
                           <div
                             key={review.review_id}
-                            className= "bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow duration-300 flex-shrink-0 w-[calc(25%-18px)] min-w-[220px]"
+                            className="bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow duration-300 flex-shrink-0 w-[calc(25%-18px)] min-w-[220px]"
                           >
                             {/* Product Name */}
                             <h4 className="font-semibold text-gray-900 mb-2 text-center uppercase text-sm">
