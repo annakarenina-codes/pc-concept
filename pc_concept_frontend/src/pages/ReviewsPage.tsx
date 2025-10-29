@@ -91,10 +91,10 @@ const ReviewsPage: React.FC = () => {
   };
 
   // Check if can scroll
-  const [, setScrollState] = useState({});
+  const [scrollState, setScrollState] = useState(0);
 
   const updateScrollState = () => {
-    setScrollState({});
+    setScrollState(prev => prev + 1);
   };
 
   const canScrollLeft = (key: string) => {
